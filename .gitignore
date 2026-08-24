@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.npm-cache/
+
+.env
+.env.*
+!.env.example
+
+coverage/
+*.log
+
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+packages/database/src/generated/prisma/

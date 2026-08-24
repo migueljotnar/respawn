@@ -1,0 +1,39 @@
+{
+  "name": "respawn",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo da plataforma de comunidade Respawn.",
+  "license": "UNLICENSED",
+  "packageManager": "npm@11.9.0",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=11.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "tsc --build && npm run bundle --workspace=@respawn/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run db:generate && npm run build && npm run typecheck && npm run db:validate",
+    "postinstall": "npm run db:generate",
+    "clean": "tsc --build --clean",
+    "api:start": "npm run start --workspace=@respawn/api",
+    "api:test": "npm run build && npm test --workspace=@respawn/api",
+    "web:dev": "npm run dev --workspace=@respawn/web",
+    "web:build": "npm run build --workspace=@respawn/web",
+    "web:preview": "npm run preview --workspace=@respawn/web",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
+    "db:format": "npm run db:format --workspace=@respawn/database",
+    "db:generate": "npm run db:generate --workspace=@respawn/database",
+    "db:validate": "npm run db:validate --workspace=@respawn/database",
+    "db:migrate": "npm run db:migrate --workspace=@respawn/database --",
+    "db:status": "npm run db:status --workspace=@respawn/database"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

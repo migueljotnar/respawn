@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: #f3f6fb;
+    background: #0f1115;
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 320px;
+    min-height: 100%;
+    color-scheme: dark;
+    background: #0f1115;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100%;
+    margin: 0;
+    overflow-x: hidden;
+    background: #0f1115;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  ::selection {
+    color: #0f1115;
+    background: #39ff88;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #f3f6fb;
+    box-shadow: 0 0 0 1000px #0f1115 inset;
+    caret-color: #f3f6fb;
+    transition: background-color 9999s ease-out;
+  }
+}
+
+@layer utilities {
+  .auth-grid {
+    background-color: #0f1115;
+    background-image:
+      linear-gradient(rgba(57, 255, 136, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px),
+      radial-gradient(circle at 72% 16%, rgba(139, 92, 246, 0.09), transparent 28%),
+      radial-gradient(circle at 15% 85%, rgba(57, 255, 136, 0.06), transparent 30%);
+    background-size: 44px 44px, 44px 44px, auto, auto;
+  }
+
+  .community-grid {
+    background-color: #0f1115;
+    background-image:
+      linear-gradient(rgba(57, 255, 136, 0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139, 92, 246, 0.018) 1px, transparent 1px),
+      radial-gradient(circle at 80% 8%, rgba(139, 92, 246, 0.045), transparent 24%);
+    background-size: 56px 56px, 56px 56px, auto;
+  }
+}
+
+@layer base {
+  * {
+    scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+    scrollbar-width: thin;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.35);
+    background-clip: padding-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
