@@ -81,5 +81,21 @@ export function createAuthRouter(authService: AuthService): Router {
     }),
   );
 
+  router.post(
+    "/logout",
+    asyncHandler(async (request, response) => {
+      const authorization = request.get("authorization");
+      const bearerToken = authorization?.match(/^Bearer ([^\s]+)$/i)?.[1];
+
+      if (!bearerToken) {
+        rejectInvalidSession(response);
+        return;
+      }
+
+      await authService.logout(bearerToken);
+      response.status(204).send();
+    }),
+  );
+
   return router;
 }

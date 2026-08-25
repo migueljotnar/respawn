@@ -64,7 +64,7 @@ model Session {
 
 model Server {
   id        String   @id @default(uuid()) @db.Uuid
-  name      String   @db.VarChar(100)
+  name      String   @unique @db.VarChar(100)
   iconUrl   String?  @map("icon_url") @db.Text
   ownerId   String   @map("owner_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -106,20 +106,27 @@ model Channel {
   server   Server    @relation(fields: [serverId], references: [id], onDelete: Cascade)
   messages Message[]
 
+  @@unique([serverId, name])
   @@index([serverId, type, position, id])
   @@map("channels")
 }
 
 model Message {
-  id        String   @id @default(uuid()) @db.Uuid
-  channelId String   @map("channel_id") @db.Uuid
-  authorId  String   @map("author_id") @db.Uuid
-  content   String   @db.Text
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  id              String   @id @default(uuid()) @db.Uuid
+  channelId       String   @map("channel_id") @db.Uuid
+  authorId        String   @map("author_id") @db.Uuid
+  content         String   @db.Text
+  clientMessageId String?  @map("client_message_id") @db.VarChar(64)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
 
   channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
   author  User    @relation(fields: [authorId], references: [id], onDelete: Restrict)
 
+  // NULL não colide consigo mesmo no Postgres, então mensagens sem
+  // clientMessageId (ex.: geradas por script/IA no futuro) não são afetadas.
+  // Um reenvio com o mesmo id do mesmo autor bate nessa constraint em vez de
+  // criar uma segunda mensagem — é a base da idempotência de message:send.
+  @@unique([authorId, clientMessageId])
   @@index([channelId, createdAt, id])
   @@index([authorId, createdAt])
   @@map("messages")

@@ -1,16 +1,33 @@
 import { Buffer } from "node:buffer";
+import type { EventEmitter } from "node:events";
 
 import cors from "cors";
 import express, { type Express } from "express";
 
 import { createAuthRouter } from "./modules/auth/auth.routes.js";
 import { createAuthService } from "./modules/auth/auth.service.js";
+import { createChatRouter } from "./modules/chat/chat.routes.js";
+import { createChatService } from "./modules/chat/chat.service.js";
+import { createVoiceRouter } from "./modules/voice/voice.routes.js";
+import { createVoiceService } from "./modules/voice/voice.service.js";
 import { errorHandler, notFoundHandler } from "./shared/http-errors.js";
 
 export interface CreateAppOptions {
   jwtSecret: string;
   jwtTtlSeconds?: number;
   corsOrigin?: string;
+  /**
+   * Compartilhado com attachChatGateway (mesma instância) para que um
+   * logout/revogação via REST derrube na hora os sockets ligados àquela
+   * sessão. Opcional só para não quebrar quem construía CreateAppOptions
+   * sem isso antes desta mudança — em server.ts sempre passamos um.
+   */
+  sessionEvents?: EventEmitter;
+  livekit: {
+    apiKey: string;
+    apiSecret: string;
+    url: string;
+  };
 }
 
 export function createApp(options: CreateAppOptions): Express {
@@ -32,6 +49,14 @@ export function createApp(options: CreateAppOptions): Express {
   const authService = createAuthService({
     jwtSecret: options.jwtSecret,
     jwtTtlSeconds,
+    ...(options.sessionEvents === undefined ? {} : { sessionEvents: options.sessionEvents }),
+  });
+  const chatService = createChatService();
+  const voiceService = createVoiceService({
+    apiKey: options.livekit.apiKey,
+    apiSecret: options.livekit.apiSecret,
+    url: options.livekit.url,
+    chatService,
   });
 
   app.disable("x-powered-by");
@@ -50,6 +75,11 @@ export function createApp(options: CreateAppOptions): Express {
   app.use(express.json({ limit: "16kb" }));
 
   app.use("/api/auth", createAuthRouter(authService));
+  app.use("/api/chat", createChatRouter(authService, chatService));
+  app.use(
+    "/api/voice",
+    createVoiceRouter(authService, voiceService, options.sessionEvents),
+  );
   app.use(notFoundHandler);
   app.use(errorHandler);
 

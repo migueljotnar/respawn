@@ -23,12 +23,15 @@ A identidade de **Respawn** adota uma estética gamer moderna, com sensação de
 
 ## 🏗️ Arquitetura Proposta
 
-### 1. Frontend (Web e Futuro Desktop)
+### 1. Frontend (Web)
 - **Framework:** React.js com TypeScript.
 - **Ferramenta de Build:** Vite (Para desenvolvimento ultra-rápido).
 - **Estilização:** Tailwind CSS (Permite replicar a UI complexa e o sistema de design original de forma rápida e pixel-perfect).
 - **Gerenciamento de Estado:** Zustand (Extremamente rápido e mais simples que o Redux para lidar com estados de quem está online/offline).
-- **Desktop Wrapper (Fase 4):** Tauri (Em vez de Electron). Escrito em Rust, garantirá que seu app Windows consuma uma fração da memória RAM do Discord original.
+- **Desktop Wrapper:** removido do escopo (24/08/2026, decisão do usuário). Chegou
+  a ser implementado com Tauri e validado, mas foi revertido — ver `task.md`
+  (Fase 4) e `QA_FASE_4_DESKTOP_TAURI.md` para o histórico. O projeto segue
+  apenas como aplicação web.
 
 ### 2. Backend (APIs e Tempo Real)
 - **Servidor Web:** Express.js ou Fastify (Node.js).
@@ -55,6 +58,10 @@ Proponho criarmos um Monorepo gerenciado por Turborepo. Isso significa que o có
 
 Para evitar consumo excessivo de tokens e garantir que o código seja construído de forma controlada (sem que eu, como IA, entre em "loop" ou crie coisas além do escopo), seguiremos as seguintes regras estritas:
 
+> A política operacional canônica para todos os agentes está em `AGENTS.md`.
+> Em caso de divergência, prevalecem a separação de papéis, a cobertura por
+> incremento e o gate de testes definidos naquele arquivo.
+
 ### 1. Lista Branca de Dependências (Strict Tooling)
 É expressamente proibido instalar pacotes que não estejam homologados abaixo sem sua permissão. Isso evita que a IA invente bibliotecas inexistentes ou obsoletas.
 - **Frontend:** `react`, `react-dom`, `typescript`, `vite`, `tailwindcss`, `zustand`, `lucide-react` (ícones), `livekit-client`, `socket.io-client`.
@@ -62,9 +69,12 @@ Para evitar consumo excessivo de tokens e garantir que o código seja construíd
 
 ### 2. Sistema de Checkpoints (Stop & Verify)
 A IA não emendará múltiplas tarefas de uma vez. O fluxo obrigatório de segurança será:
-1. Eu escrevo o código correspondente a **apenas uma** subtarefa do `task.md`.
-2. Eu executo o código/build via terminal para garantir que compila.
-3. **PONTO DE CHECAGEM:** Eu encerro meu turno e peço para você olhar. Só avançaremos para o próximo passo do `task.md` com a sua confirmação explícita de que a etapa funciona.
+1. O agente implementador trabalha em **apenas um incremento pequeno** da subtarefa atual do `task.md`.
+2. No mesmo incremento, cria ou atualiza o teste automatizado do comportamento e executa os testes focados.
+3. Se algum teste falhar, interrompe a implementação, explica o erro e propõe a correção antes de avançar.
+4. Ao concluir a funcionalidade, executa `npm run check` e entrega os resultados ao agente de QA.
+5. O QA valida o handoff de forma independente e não implementa a próxima funcionalidade. Ele só assume uma correção quando o implementador não consegue resolvê-la, a falha persiste após a tentativa ou o usuário transfere explicitamente a correção.
+6. O próximo passo do `task.md` só é liberado após o gate completo e a aprovação do QA.
 
 ## 🧪 Verification Plan
 
@@ -72,3 +82,13 @@ A IA não emendará múltiplas tarefas de uma vez. O fluxo obrigatório de segur
 - **Fidelidade UI:** Comparação visual rigorosa (Side-by-side) da interface construída com o Discord real.
 - **Teste de Latência de Voz:** Conectar múltiplos usuários em um servidor de teste provisório para garantir que o áudio flui sem delays notáveis.
 - **Resiliência:** Desconectar intencionalmente a rede do cliente por 5 segundos e garantir que o app se reconecta e recupera as mensagens perdidas silenciosamente.
+
+## 🖥️ Fase 4: Aplicação Desktop (Tauri) — removida do escopo
+
+Chegou a ser implementada (Tauri instalado em `apps/web`, barra de título
+customizada, `.exe` de release compilando e rodando) e validada em QA, mas
+foi revertida em 24/08/2026 por decisão do usuário: a experiência desktop
+pareceu instável e o usuário prefere não manter uma stack (Rust/Tauri) fora
+do seu domínio de conhecimento. O projeto segue apenas como aplicação web,
+com os mesmos requisitos das demais fases. Histórico completo em `task.md`
+(Fase 4) e `QA_FASE_4_DESKTOP_TAURI.md`.

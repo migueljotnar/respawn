@@ -10,9 +10,9 @@ interface AuthShellProps {
 
 export function AuthShell({ children }: AuthShellProps) {
   return (
-    <main className="min-h-[100dvh] overflow-x-hidden bg-respawn-base text-respawn-ice lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]">
+    <main className="min-h-full overflow-x-hidden bg-respawn-base text-respawn-ice lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(440px,0.92fr)]">
       <section
-        className="relative hidden min-h-[100dvh] overflow-hidden border-r border-white/10 lg:block"
+        className="relative hidden min-h-full overflow-hidden border-r border-white/10 lg:block"
         aria-label="Conheça a comunidade Respawn"
       >
         <picture className="absolute inset-0" aria-hidden="true">
@@ -26,7 +26,7 @@ export function AuthShell({ children }: AuthShellProps) {
         <div className="absolute inset-0 bg-gradient-to-b from-respawn-base/25 via-respawn-base/20 to-respawn-base/95" />
         <div className="absolute inset-0 bg-gradient-to-r from-respawn-base/15 to-respawn-base/55" />
 
-        <div className="relative z-10 flex h-full min-h-[100dvh] flex-col justify-between p-10 xl:p-14">
+        <div className="relative z-10 flex h-full min-h-full flex-col justify-between p-10 xl:p-14">
           <BrandMark />
 
           <div className="max-w-2xl rounded-[2rem] border border-white/10 bg-respawn-base/75 p-7 shadow-panel backdrop-blur-xl xl:p-9">
@@ -58,7 +58,7 @@ export function AuthShell({ children }: AuthShellProps) {
         </div>
       </section>
 
-      <section className="auth-grid relative flex min-h-[100dvh] flex-col items-center justify-center px-4 py-5 sm:px-8 sm:py-10 lg:px-10 xl:px-16">
+      <section className="auth-grid relative flex min-h-full flex-col items-center justify-center px-4 py-5 sm:px-8 sm:py-10 lg:px-10 xl:px-16">
         <div className="pointer-events-none absolute -right-28 top-[-7rem] h-72 w-72 rounded-full bg-respawn-purple/15 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-[-7rem] h-80 w-80 rounded-full bg-respawn-neon/10 blur-3xl" />
 

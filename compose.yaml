@@ -1,6 +1,34 @@
 name: respawn
 
 services:
+  livekit:
+    # LiveKit v1.13.5 — digest fixo para o ambiente de QA ser reproduzível.
+    image: livekit/livekit-server@sha256:3497163e15c48fef6e7830c78716f9e9d5edc28abf7aa90b61c86e93bbc306b1
+    restart: unless-stopped
+    command: --dev --bind 0.0.0.0
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY:-devkey}: ${LIVEKIT_API_SECRET:-devsecret_at_least_32_characters_long}"
+      # O ICE precisa anunciar o IPv4 LAN do HOST. O loopback e o IP 172.x da
+      # bridge Docker não são alcançáveis entre o Chromium e o LiveKit.
+      NODE_IP: "${LIVEKIT_NODE_IP:?defina LIVEKIT_NODE_IP no .env com o IPv4 LAN do host}"
+      LIVEKIT_RTC_ENABLE_LOOPBACK_CANDIDATE: "false"
+      LIVEKIT_RTC_USE_EXTERNAL_IP: "false"
+      LIVEKIT_RTC_TCP_PORT: "7881"
+      LIVEKIT_RTC_UDP_PORT: "7882"
+    ports:
+      - "127.0.0.1:7880:7880" # Sinalização HTTP/WebSocket
+      - "0.0.0.0:7881:7881" # RTC via TCP (fallback quando UDP é bloqueado)
+      - "0.0.0.0:7882:7882/udp" # RTC via UDP — anunciado pelo IP LAN acima
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - wget -q -O /dev/null http://127.0.0.1:7880/ || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    stop_grace_period: 10s
+
   postgres:
     image: postgres:18.6-alpine3.24
     restart: unless-stopped

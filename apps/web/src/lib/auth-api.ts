@@ -221,6 +221,10 @@ async function request(
     );
   }
 
+  if (response.status === 204) {
+    return { data: null, status: response.status };
+  }
+
   if (!isRecord(body) || !("data" in body)) {
     throw invalidResponse(response.status);
   }
@@ -280,5 +284,16 @@ export const authApi = {
     }
 
     return response.data;
+  },
+
+  async logout(token: string, signal?: AbortSignal): Promise<void> {
+    await request(
+      "/api/auth/logout",
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+      signal,
+    );
   },
 };

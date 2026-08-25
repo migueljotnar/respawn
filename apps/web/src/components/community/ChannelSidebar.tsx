@@ -4,10 +4,14 @@ import {
   Headphones,
   LogOut,
   Mic,
+  MicOff,
+  MonitorUp,
   ShieldCheck,
+  Video,
+  VideoOff,
   Volume2,
 } from "lucide-react";
-import type { MouseEvent } from "react";
+import { useState, type MouseEvent } from "react";
 
 import {
   communityChannels,
@@ -15,6 +19,27 @@ import {
 } from "../../data/community-mocks.js";
 import { communityPath } from "../../lib/app-router.js";
 import type { PublicUser } from "../../lib/auth-api.js";
+import {
+  SCREEN_SHARE_PRESETS,
+  type ScreenSharePresetId,
+  type VoiceConnectionStatus,
+  type VoiceParticipant,
+} from "../../stores/voice-store.js";
+
+export interface ChannelSidebarVoiceState {
+  status: VoiceConnectionStatus;
+  channelSlug: string | null;
+  roomName: string | null;
+  rttMs: number | null;
+  error: string | null;
+  audioPlaybackBlocked: boolean;
+  micMuted: boolean;
+  deafened: boolean;
+  cameraEnabled: boolean;
+  screenShareEnabled: boolean;
+  screenSharePreset: ScreenSharePresetId | null;
+  participants: VoiceParticipant[];
+}
 
 interface ChannelSidebarProps {
   activeChannelId: ChannelId;
@@ -22,7 +47,17 @@ interface ChannelSidebarProps {
   user: PublicUser;
   onNavigate: (channelId: ChannelId) => void;
   onLogout: () => void;
+  onlineCount: number;
+  isSelfOnline: boolean;
   className: string;
+  voice: ChannelSidebarVoiceState;
+  onToggleVoiceMic: () => void;
+  onToggleVoiceDeafen: () => void;
+  onToggleVoiceCamera: () => void;
+  onStartVoiceScreenShare: (preset: ScreenSharePresetId) => void;
+  onStopVoiceScreenShare: () => void;
+  onResumeVoiceAudioPlayback: () => void;
+  onLeaveVoice: () => void;
 }
 
 const sections = ["PONTO DE ENCONTRO", "ARCADE", "SALAS DE VOZ"] as const;
@@ -37,14 +72,42 @@ function getInitials(user: PublicUser): string {
     .toUpperCase();
 }
 
+function initialsFromName(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function describeVoiceStatusLabel(status: VoiceConnectionStatus): string {
+  if (status === "connected") return "Voice Connected";
+  if (status === "connecting") return "Conectando...";
+  if (status === "error") return "Erro na conexão de voz";
+  return "";
+}
+
 export function ChannelSidebar({
   activeChannelId,
   serverId,
   user,
   onNavigate,
   onLogout,
+  onlineCount,
+  isSelfOnline,
   className,
+  voice,
+  onToggleVoiceMic,
+  onToggleVoiceDeafen,
+  onToggleVoiceCamera,
+  onStartVoiceScreenShare,
+  onStopVoiceScreenShare,
+  onResumeVoiceAudioPlayback,
+  onLeaveVoice,
 }: ChannelSidebarProps) {
+  const [presetPickerOpen, setPresetPickerOpen] = useState(false);
+
   function handleChannelClick(
     event: MouseEvent<HTMLAnchorElement>,
     channelId: ChannelId,
@@ -78,11 +141,11 @@ export function ChannelSidebar({
       <div className="mx-3 mt-3 flex shrink-0 items-center justify-between rounded-xl border border-respawn-neon/15 bg-respawn-neon/[0.05] px-3 py-2.5">
         <div>
           <p className="text-xs font-bold text-respawn-ice">Comunidade em movimento</p>
-          <p className="mt-0.5 text-[11px] text-slate-400">Dados demonstrativos</p>
+          <p className="mt-0.5 text-[11px] text-slate-400">Presença em tempo real</p>
         </div>
         <span className="flex items-center gap-1.5 rounded-full bg-respawn-neon px-2 py-1 text-[10px] font-black uppercase tracking-wider text-respawn-base">
           <span className="h-1.5 w-1.5 rounded-full bg-respawn-base" aria-hidden="true" />
-          7 online
+          {onlineCount} online
         </span>
       </div>
 
@@ -138,6 +201,42 @@ export function ChannelSidebar({
                           </span>
                         ) : null}
                       </a>
+                      {channel.kind === "voice" && channel.id === voice.channelSlug ? (
+                        <ul
+                          className="ml-6 mt-0.5 space-y-0.5 border-l border-white/10 py-1 pl-2"
+                          role="list"
+                          aria-label={`Conectados em ${channel.name}`}
+                        >
+                          {voice.participants.length === 0 ? (
+                            <li className="px-2 py-1 text-[11px] text-slate-500">Conectando...</li>
+                          ) : (
+                            voice.participants.map((participant) => (
+                              <li key={participant.id} className="flex items-center gap-2 px-2 py-1">
+                                <span
+                                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-respawn-neon/20 to-respawn-purple/25 text-[10px] font-black text-respawn-ice ring-2 transition-all ${
+                                    participant.isSpeaking
+                                      ? "animate-pulse ring-respawn-neon shadow-neon-soft"
+                                      : "ring-transparent"
+                                  }`}
+                                  aria-hidden="true"
+                                >
+                                  {initialsFromName(participant.name)}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate text-xs text-slate-300">
+                                  {participant.name}
+                                  {participant.isLocal ? " (você)" : ""}
+                                </span>
+                                {participant.micMuted ? (
+                                  <MicOff
+                                    className="h-3 w-3 shrink-0 text-slate-500"
+                                    aria-label={`${participant.name} está com o microfone mutado`}
+                                  />
+                                ) : null}
+                              </li>
+                            ))
+                          )}
+                        </ul>
+                      ) : null}
                     </li>
                   );
                 })}
@@ -147,13 +246,125 @@ export function ChannelSidebar({
         })}
       </nav>
 
+      {voice.status !== "disconnected" ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mx-3 mb-2 shrink-0 rounded-xl border border-respawn-neon/20 bg-respawn-neon/[0.06] px-3 py-2"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-respawn-ice">
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    voice.status === "connected"
+                      ? "bg-respawn-neon"
+                      : voice.status === "error"
+                        ? "bg-red-400"
+                        : "bg-amber-400"
+                  }`}
+                  aria-hidden="true"
+                />
+                {describeVoiceStatusLabel(voice.status)}
+              </p>
+              <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                {voice.roomName ?? voice.channelSlug}
+                {voice.status === "connected" && voice.rttMs !== null ? ` · ${voice.rttMs} ms` : ""}
+                {voice.screenShareEnabled && voice.screenSharePreset
+                  ? ` · Compartilhando (${
+                      SCREEN_SHARE_PRESETS.find((preset) => preset.id === voice.screenSharePreset)
+                        ?.label ?? voice.screenSharePreset
+                    })`
+                  : ""}
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <button
+                type="button"
+                onClick={onToggleVoiceCamera}
+                aria-pressed={voice.cameraEnabled}
+                aria-label={voice.cameraEnabled ? "Desligar câmera" : "Ligar câmera"}
+                className={`grid h-7 w-7 place-items-center rounded-lg outline-none transition-colors focus-visible:ring-2 focus-visible:ring-respawn-neon ${
+                  voice.cameraEnabled
+                    ? "bg-respawn-neon/15 text-respawn-neon hover:bg-respawn-neon/25"
+                    : "text-slate-400 hover:bg-white/[0.06] hover:text-respawn-ice"
+                }`}
+              >
+                {voice.cameraEnabled ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (voice.screenShareEnabled) {
+                    onStopVoiceScreenShare();
+                    return;
+                  }
+
+                  setPresetPickerOpen((open) => !open);
+                }}
+                aria-pressed={voice.screenShareEnabled}
+                aria-expanded={presetPickerOpen}
+                aria-label={voice.screenShareEnabled ? "Parar compartilhamento de tela" : "Compartilhar tela"}
+                className={`grid h-7 w-7 place-items-center rounded-lg outline-none transition-colors focus-visible:ring-2 focus-visible:ring-respawn-neon ${
+                  voice.screenShareEnabled
+                    ? "bg-respawn-neon/15 text-respawn-neon hover:bg-respawn-neon/25"
+                    : "text-slate-400 hover:bg-white/[0.06] hover:text-respawn-ice"
+                }`}
+              >
+                <MonitorUp className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onLeaveVoice}
+                aria-label="Sair da chamada de voz"
+                className="rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 outline-none transition-colors hover:bg-white/[0.06] hover:text-red-300 focus-visible:ring-2 focus-visible:ring-respawn-neon"
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+          {presetPickerOpen && !voice.screenShareEnabled ? (
+            <div
+              role="menu"
+              aria-label="Escolher qualidade do compartilhamento de tela"
+              className="mt-2 grid grid-cols-2 gap-1"
+            >
+              {SCREEN_SHARE_PRESETS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setPresetPickerOpen(false);
+                    onStartVoiceScreenShare(preset.id);
+                  }}
+                  className="rounded-lg border border-white/10 px-2 py-1 text-[10px] font-bold text-slate-300 outline-none transition-colors hover:border-respawn-neon/40 hover:text-respawn-ice focus-visible:ring-2 focus-visible:ring-respawn-neon"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {voice.error ? <p className="mt-1 text-[11px] text-red-300">{voice.error}</p> : null}
+          {voice.audioPlaybackBlocked ? (
+            <button
+              type="button"
+              onClick={onResumeVoiceAudioPlayback}
+              className="mt-1.5 w-full rounded-lg bg-respawn-neon px-2 py-1 text-[10px] font-black text-respawn-base outline-none focus-visible:ring-2 focus-visible:ring-respawn-ice"
+            >
+              Ativar áudio
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="flex min-h-[68px] shrink-0 items-center gap-2 border-t border-white/[0.07] bg-respawn-base/35 px-3 py-2">
         <div className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-respawn-neon/25 to-respawn-purple/30 text-xs font-black text-respawn-ice">
           {getInitials(user)}
           <span
             role="img"
-            className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-respawn-panel bg-respawn-neon"
-            aria-label="Online — simulação visual"
+            className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-respawn-panel ${isSelfOnline ? "bg-respawn-neon" : "bg-slate-500"}`}
+            aria-label={isSelfOnline ? "online" : "offline"}
           />
         </div>
         <div className="min-w-0 flex-1">
@@ -165,17 +376,45 @@ export function ChannelSidebar({
         <div className="flex items-center gap-0.5">
           <button
             type="button"
-            disabled
-            aria-label="Microfone — disponível na fase de voz"
-            className="grid h-9 w-9 cursor-not-allowed place-items-center rounded-lg text-slate-500 opacity-70"
+            onClick={onToggleVoiceMic}
+            disabled={voice.status !== "connected"}
+            aria-pressed={voice.micMuted}
+            aria-label={
+              voice.status === "connected"
+                ? voice.micMuted
+                  ? "Ativar microfone"
+                  : "Mutar microfone"
+                : "Microfone — conecte-se a uma sala de voz"
+            }
+            className={`grid h-9 w-9 place-items-center rounded-lg outline-none transition-colors focus-visible:ring-2 focus-visible:ring-respawn-neon ${
+              voice.status !== "connected"
+                ? "cursor-not-allowed text-slate-500 opacity-70"
+                : voice.micMuted
+                  ? "bg-red-400/10 text-red-300 hover:bg-red-400/20"
+                  : "text-slate-300 hover:bg-white/[0.06] hover:text-respawn-ice"
+            }`}
           >
-            <Mic className="h-4 w-4" />
+            {voice.micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </button>
           <button
             type="button"
-            disabled
-            aria-label="Áudio — disponível na fase de voz"
-            className="hidden h-9 w-9 cursor-not-allowed place-items-center rounded-lg text-slate-500 opacity-70 min-[900px]:grid"
+            onClick={onToggleVoiceDeafen}
+            disabled={voice.status !== "connected"}
+            aria-pressed={voice.deafened}
+            aria-label={
+              voice.status === "connected"
+                ? voice.deafened
+                  ? "Reativar áudio"
+                  : "Ensurdecer áudio"
+                : "Áudio — conecte-se a uma sala de voz"
+            }
+            className={`grid h-9 w-9 place-items-center rounded-lg outline-none transition-colors focus-visible:ring-2 focus-visible:ring-respawn-neon ${
+              voice.status !== "connected"
+                ? "cursor-not-allowed text-slate-500 opacity-70"
+                : voice.deafened
+                  ? "bg-red-400/10 text-red-300 hover:bg-red-400/20"
+                  : "text-slate-300 hover:bg-white/[0.06] hover:text-respawn-ice"
+            }`}
           >
             <Headphones className="h-4 w-4" />
           </button>

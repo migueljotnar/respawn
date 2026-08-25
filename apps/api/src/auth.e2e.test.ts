@@ -95,6 +95,7 @@ before(async () => {
   const app = createApp({
     jwtSecret: JWT_SECRET,
     jwtTtlSeconds: 60 * 60,
+    livekit: { apiKey: "test-key", apiSecret: "test-secret", url: "ws://127.0.0.1:7880" },
   });
   server = app.listen(0, "127.0.0.1");
   await once(server, "listening");

@@ -45,6 +45,7 @@ export function App() {
     token: string;
     request: Promise<VerifiedSession>;
   } | null>(null);
+  const logoutInFlight = useRef<Promise<void> | null>(null);
   const [pathname, setPathname] = useState(() => window.location.pathname);
   const [authState, setAuthState] = useState<AuthState>({
     status: "checking",
@@ -229,12 +230,46 @@ export function App() {
     await verifyToken(result.token, false);
   }
 
-  function handleLogout() {
+  function finishLocalLogout() {
     verificationSequence.current += 1;
     pendingCommunityPath.current = null;
     clearSessionToken();
     setAuthState({ status: "anonymous", notice: null });
     navigate("/login", true);
+  }
+
+  function handleLogout() {
+    if (logoutInFlight.current) {
+      return;
+    }
+
+    const token = readSessionToken();
+
+    if (!token) {
+      finishLocalLogout();
+      return;
+    }
+
+    // Invalida qualquer verificacao de sessao ainda em voo, mas preserva o
+    // token no storage ate a tentativa remota ter sido concluida. Assim o
+    // backend consegue revogar a sessao e desconectar todas as sockets ligadas
+    // a ela antes de o estado local desaparecer.
+    verificationSequence.current += 1;
+    setAuthState({
+      status: "checking",
+      message: "Encerrando sua sessão com segurança...",
+    });
+    const request = authApi.logout(token).catch(() => undefined);
+    logoutInFlight.current = request;
+
+    void request.finally(() => {
+      if (logoutInFlight.current !== request) {
+        return;
+      }
+
+      logoutInFlight.current = null;
+      finishLocalLogout();
+    });
   }
 
   function handleRetry() {
