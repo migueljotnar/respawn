@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Gamepad2, MessagesSquare, UsersRound } from "lucide-react";
 
-import brandBackdropUrl from "../../../../branding1.png";
+import brandBackdropUrl from "../assets/branding1.png";
 import { BrandMark } from "./BrandMark.js";
 
 interface AuthShellProps {

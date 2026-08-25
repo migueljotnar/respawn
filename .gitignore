@@ -1,17 +1,55 @@
+# ---------------------------------------------------------------------------
+# Dependências e artefatos de build
+# ---------------------------------------------------------------------------
 node_modules/
 dist/
+build/
+*.tsbuildinfo
+
+# Cache do npm (definido em .npmrc como cache=.npm-cache, criado por workspace)
 .npm-cache/
 
+# Client gerado pelo Prisma (recriado por `npm run db:generate`)
+packages/database/src/generated/prisma/
+
+# ---------------------------------------------------------------------------
+# Segredos — NUNCA versionar
+# ---------------------------------------------------------------------------
 .env
 .env.*
 !.env.example
 
+# Chaves de deploy/SSH geradas localmente
+.deploy-secrets/
+*.pem
+*.ppk
+*.p12
+*.pfx
+id_rsa*
+id_ecdsa*
+id_ed25519*
+*_ed25519
+*_ed25519.pub
+*.key
+
+# ---------------------------------------------------------------------------
+# Configuração local de ferramentas (específica de cada máquina)
+# ---------------------------------------------------------------------------
+.claude/settings.local.json
+
+# ---------------------------------------------------------------------------
+# Testes, logs e temporários
+# ---------------------------------------------------------------------------
 coverage/
 *.log
+npm-debug.log*
+_to_delete/
 
+# ---------------------------------------------------------------------------
+# Sistema operacional e editores
+# ---------------------------------------------------------------------------
 .DS_Store
 Thumbs.db
+desktop.ini
 .idea/
 .vscode/
-
-packages/database/src/generated/prisma/
